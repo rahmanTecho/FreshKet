@@ -1,13 +1,28 @@
-FROM node:20-alpine
+# Build stage
+FROM node:latest as build
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
+# Install dependencies
 RUN npm install
 
-COPY . .
+# Copy the rest of your app files
+COPY . ./
 
-EXPOSE 3000
+# Build the app
+RUN npm run build
 
-CMD ["npm", "start"]
+# Production stage
+FROM nginx:latest
+
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Use custom Nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off;"]
